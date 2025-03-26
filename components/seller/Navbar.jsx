@@ -2,10 +2,13 @@ import React from 'react'
 import { assets } from '../../assets/assets'
 import Image from 'next/image'
 import { useAppContext } from '@/context/AppContext'
+import { useClerk } from '@clerk/nextjs'
 
 const Navbar = () => {
 
-  const { router } = useAppContext()
+  const { router } = useAppContext();
+ 
+
 
   return (
     <div className='flex items-center px-4 md:px-8 py-3 justify-between border-b'>
