@@ -2,8 +2,11 @@
 import React, { useState } from "react";
 import { assets } from "@/assets/assets";
 import Image from "next/image";
+import toast from "react-hot-toast";
+import { useRouter } from "next/navigation";
 
 const AddProduct = () => {
+  const router = useRouter();
 
   const [files, setFiles] = useState([]);
   const [name, setName] = useState('');
@@ -11,10 +14,66 @@ const AddProduct = () => {
   const [category, setCategory] = useState('Earphone');
   const [price, setPrice] = useState('');
   const [offerPrice, setOfferPrice] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (files.length === 0) {
+      toast.error('Please upload at least one product image');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // Convert files to base64 for storage (in production, use cloud storage like Cloudinary)
+      const imagePromises = files.filter(Boolean).map(file => {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      });
+
+      const images = await Promise.all(imagePromises);
+
+      const response = await fetch('/api/product', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name,
+          description,
+          category,
+          price,
+          offerPrice,
+          image: images
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success('Product added successfully!');
+        // Reset form
+        setFiles([]);
+        setName('');
+        setDescription('');
+        setCategory('Earphone');
+        setPrice('');
+        setOfferPrice('');
+        router.push('/seller/product-list');
+      } else {
+        toast.error(data.message || 'Failed to add product');
+      }
+    } catch (error) {
+      toast.error('Error adding product: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -124,8 +183,12 @@ const AddProduct = () => {
             />
           </div>
         </div>
-        <button type="submit" className="px-8 py-2.5 bg-orange-600 text-white font-medium rounded">
-          ADD
+        <button
+          type="submit"
+          disabled={loading}
+          className="px-8 py-2.5 bg-orange-600 text-white font-medium rounded disabled:bg-orange-400 disabled:cursor-not-allowed"
+        >
+          {loading ? 'Adding...' : 'ADD'}
         </button>
       </form>
       {/* <Footer /> */}

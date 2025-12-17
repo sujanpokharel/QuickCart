@@ -1,10 +1,11 @@
 'use client'
 import React, { useEffect, useState } from "react";
-import { assets, productsDummyData } from "@/assets/assets";
+import { assets } from "@/assets/assets";
 import Image from "next/image";
 import { useAppContext } from "@/context/AppContext";
 import Footer from "@/components/seller/Footer";
 import Loading from "@/components/Loading";
+import toast from "react-hot-toast";
 
 const ProductList = () => {
 
@@ -14,8 +15,42 @@ const ProductList = () => {
   const [loading, setLoading] = useState(true)
 
   const fetchSellerProduct = async () => {
-    setProducts(productsDummyData)
-    setLoading(false)
+    try {
+      const response = await fetch('/api/product');
+      const data = await response.json();
+
+      if (data.success) {
+        setProducts(data.products);
+      } else {
+        toast.error(data.message || 'Failed to fetch products');
+      }
+    } catch (error) {
+      toast.error('Error fetching products: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const handleDelete = async (productId) => {
+    if (!confirm('Are you sure you want to delete this product?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/product/${productId}`, {
+        method: 'DELETE',
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success('Product deleted successfully');
+        setProducts(products.filter(p => p._id !== productId));
+      } else {
+        toast.error(data.message || 'Failed to delete product');
+      }
+    } catch (error) {
+      toast.error('Error deleting product: ' + error.message);
+    }
   }
 
   useEffect(() => {
@@ -58,14 +93,23 @@ const ProductList = () => {
                   <td className="px-4 py-3 max-sm:hidden">{product.category}</td>
                   <td className="px-4 py-3">${product.offerPrice}</td>
                   <td className="px-4 py-3 max-sm:hidden">
-                    <button onClick={() => router.push(`/product/${product._id}`)} className="flex items-center gap-1 px-1.5 md:px-3.5 py-2 bg-orange-600 text-white rounded-md">
-                      <span className="hidden md:block">Visit</span>
-                      <Image
-                        className="h-3.5"
-                        src={assets.redirect_icon}
-                        alt="redirect_icon"
-                      />
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => router.push(`/product/${product._id}`)} className="flex items-center gap-1 px-1.5 md:px-3.5 py-2 bg-orange-600 text-white rounded-md">
+                        <span className="hidden md:block">Visit</span>
+                        <Image
+                          className="h-3.5"
+                          src={assets.redirect_icon}
+                          alt="redirect_icon"
+                        />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(product._id)}
+                        className="flex items-center gap-1 px-1.5 md:px-3.5 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                      >
+                        <span className="hidden md:block">Delete</span>
+                        <span className="md:hidden">×</span>
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
