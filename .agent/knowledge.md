@@ -1,194 +1,226 @@
-# QuickCart - E-Commerce Platform Knowledge Base
+# QuickCart - E-Commerce Project Knowledge Base
 
-## Project Overview
+## Overview
 
-**QuickCart** is a modern e-commerce web application built with **Next.js 15** (App Router), designed for selling electronics and tech products. The application supports both customer shopping experiences and seller dashboard functionality.
+QuickCart is a full-stack e-commerce application built with Next.js, featuring a customer shopping experience and a seller dashboard for managing products and orders.
 
 ## Technology Stack
 
 | Technology | Purpose |
 |------------|---------|
-| **Next.js 15** | React framework with App Router (Turbopack enabled) |
-| **React 19** | UI library |
-| **Tailwind CSS 3.4** | Utility-first CSS framework |
-| **Clerk** | Authentication & user management |
-| **MongoDB/Mongoose** | Database (via Mongoose ODM) |
-| **Inngest** | Background job processing & webhook handling |
-| **react-hot-toast** | Toast notifications |
+| Next.js 15 (App Router) | React framework with server-side rendering |
+| React 19 | Frontend UI library |
+| Tailwind CSS | Styling |
+| MongoDB (Local) | Database (MongoDB Community Server) |
+| Mongoose | MongoDB ODM |
+| JWT (jsonwebtoken) | Authentication tokens |
+| bcryptjs | Password hashing |
+| react-hot-toast | Toast notifications |
 
 ## Project Structure
 
 ```
 QuickCart/
-├── app/                    # Next.js App Router pages
-│   ├── layout.js          # Root layout (Clerk, AppContext, Toaster)
-│   ├── page.jsx           # Homepage
-│   ├── globals.css        # Global styles
-│   ├── all-products/      # Product listing page
-│   ├── product/[id]/      # Dynamic product detail page
-│   ├── cart/              # Shopping cart page
-│   ├── my-orders/         # Customer order history
-│   ├── order-placed/      # Order confirmation page
-│   ├── add-address/       # Address form page
-│   ├── seller/            # Seller dashboard (nested layout)
-│   │   ├── layout.jsx     # Seller dashboard layout
-│   │   ├── page.jsx       # Add Product form
-│   │   ├── product-list/  # Seller's product list
-│   │   └── orders/        # Seller's orders
-│   └── inngest/           # Inngest webhook handler (API route)
-├── components/            # Reusable UI components
-│   ├── Navbar.jsx         # Main navigation
-│   ├── Footer.jsx         # Site footer
-│   ├── ProductCard.jsx    # Product display card
-│   ├── HeaderSlider.jsx   # Homepage carousel
-│   ├── HomeProducts.jsx   # Homepage product grid
-│   ├── FeaturedProduct.jsx# Featured product section
-│   ├── Banner.jsx         # Promotional banner
-│   ├── NewsLetter.jsx     # Newsletter signup
-│   ├── OrderSummary.jsx   # Cart order summary & checkout
-│   ├── Loading.jsx        # Loading spinner
-│   └── seller/            # Seller-specific components
-│       ├── Navbar.jsx
+├── app/
+│   ├── api/
+│   │   ├── auth/
+│   │   │   ├── login/route.js      # Login endpoint
+│   │   │   ├── register/route.js   # Registration endpoint
+│   │   │   ├── logout/route.js     # Logout endpoint
+│   │   │   └── me/route.js         # Get current user
+│   │   ├── product/
+│   │   │   ├── route.js            # GET all, POST new
+│   │   │   └── [id]/route.js       # GET, PUT, DELETE single
+│   │   ├── order/
+│   │   │   ├── route.js            # GET user orders, POST new
+│   │   │   └── seller/route.js     # Seller order management
+│   │   ├── address/route.js        # Address CRUD
+│   │   └── cart/route.js           # Cart sync
+│   ├── login/page.jsx              # Login page
+│   ├── register/page.jsx           # Registration page
+│   ├── seller/
+│   │   ├── layout.jsx              # Seller dashboard layout
+│   │   ├── page.jsx                # Add Product form
+│   │   ├── product-list/page.jsx   # Product management
+│   │   └── orders/page.jsx         # Order management
+│   ├── product/[id]/page.jsx       # Product details
+│   ├── cart/page.jsx               # Shopping cart
+│   ├── my-orders/page.jsx          # User order history
+│   ├── layout.js                   # Root layout
+│   └── page.jsx                    # Homepage
+├── components/
+│   ├── Navbar.jsx                  # Navigation with auth
+│   ├── ProductCard.jsx
+│   ├── OrderSummary.jsx
+│   └── seller/
 │       ├── Sidebar.jsx
 │       └── Footer.jsx
-├── context/               # React Context providers
-│   └── AppContext.jsx     # Global app state (cart, user, products)
-├── config/                # Configuration files
-│   ├── db.js             # MongoDB connection
-│   └── inngest.js        # Inngest client & functions
-├── lib/                   # Utility libraries
-│   └── authSeller.js     # Seller authentication helper
-├── models/                # Mongoose schemas
-│   └── user.js           # User model
-├── assets/                # Static assets & dummy data
-│   └── assets.js         # Image imports & dummy data
-├── middleware.ts          # Clerk authentication middleware
-└── public/                # Public static files
+├── context/
+│   └── AppContext.jsx              # Global state (user, cart, products)
+├── models/
+│   ├── user.js                     # User schema
+│   ├── Product.js                  # Product schema
+│   ├── Order.js                    # Order schema
+│   └── Address.js                  # Address schema
+├── lib/
+│   ├── auth.js                     # Auth utilities (JWT, password)
+│   └── authSeller.js               # Seller authorization
+├── config/
+│   └── db.js                       # MongoDB connection
+├── middleware.js                   # Route protection
+└── assets/                         # Static assets
 ```
 
-## Core Features
+## Authentication System
 
-### 1. Customer Features
-- **Browse Products**: View all products on `/all-products`
-- **Product Details**: View individual product on `/product/[id]`
-- **Shopping Cart**: Add/remove products, adjust quantities at `/cart`
-- **Checkout Flow**: Address selection, promo codes, order placement
-- **Order History**: View past orders at `/my-orders`
-- **Authentication**: Sign in via Clerk (UserButton with custom menu items)
+### Local JWT Authentication
+- Users register with email/password (passwords hashed with bcrypt)
+- JWT tokens stored in httpOnly cookies (7-day expiry)
+- Middleware protects routes based on authentication and seller role
+- No external services required - completely local
 
-### 2. Seller Features (Protected Routes)
-- **Add Products**: Upload product images, set name/description/category/price
-- **Product Management**: View all products in tabular format
-- **Order Management**: View customer orders
-- **Seller Role Check**: `authSeller.js` verifies `publicMetadata.role === 'seller'`
+### Auth Endpoints
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/auth/register` | POST | Register new user (optional seller flag) |
+| `/api/auth/login` | POST | Login with email/password |
+| `/api/auth/logout` | POST | Clear auth cookie |
+| `/api/auth/me` | GET | Get current user data |
 
-## Application Flow
+### Route Protection
+- **Protected Routes**: `/my-orders`, `/add-address` (require login)
+- **Seller Routes**: `/seller/*` (require login + isSeller flag)
+- **Auth Routes**: `/login`, `/register` (redirect if already logged in)
 
-### Authentication Flow
-1. Clerk handles auth via `ClerkProvider` in root layout
-2. `middleware.ts` applies Clerk middleware to protect routes
-3. User data synced to MongoDB via Inngest webhooks:
-   - `clerk/user.created` → Create user in DB
-   - `clerk/user.updated` → Update user in DB
-   - `clerk/user.deleted` → Delete user from DB
+## API Routes
 
-### State Management (AppContext)
-The `AppContext` provides global state:
+### Products
+| Route | Method | Auth | Description |
+|-------|--------|------|-------------|
+| `/api/product` | GET | No | Get all products |
+| `/api/product` | POST | Seller | Add new product |
+| `/api/product/[id]` | GET | No | Get single product |
+| `/api/product/[id]` | PUT | Seller+Owner | Update product |
+| `/api/product/[id]` | DELETE | Seller+Owner | Delete product |
+
+### Orders
+| Route | Method | Auth | Description |
+|-------|--------|------|-------------|
+| `/api/order` | GET | Yes | Get user's orders |
+| `/api/order` | POST | Yes | Create new order |
+| `/api/order/seller` | GET | Seller | Get seller's orders |
+| `/api/order/seller` | PUT | Seller | Update order status |
+
+### Other
+| Route | Method | Auth | Description |
+|-------|--------|------|-------------|
+| `/api/address` | GET/POST/DELETE | Yes | Address management |
+| `/api/cart` | GET/POST | Yes | Cart sync to DB |
+
+## Database Models
+
+### User
 ```javascript
 {
-  user,                    // Clerk user object
-  currency,                // From NEXT_PUBLIC_CURRENCY env
-  router,                  // Next.js router
-  isSeller, setIsSeller,   // Seller mode toggle
-  userData, fetchUserData, // User data from DB
-  products, fetchProductData, // Product catalog
-  cartItems, setCartItems, // Shopping cart state
-  addToCart,               // Add item to cart
-  updateCartQuantity,      // Update cart item quantity
-  getCartCount,            // Total items in cart
-  getCartAmount            // Total cart value
+  name: String,
+  email: String (unique),
+  password: String (hashed),
+  imageUrl: String,
+  isSeller: Boolean,
+  cartItems: Object,
+  createdAt: Date
 }
 ```
 
-### Shopping Flow
-1. Browse products on homepage or `/all-products`
-2. Click product → navigate to `/product/[id]`
-3. "Add to Cart" or "Buy Now" → updates `cartItems` in context
-4. View cart at `/cart` with `OrderSummary` component
-5. Select address (or add new via `/add-address`)
-6. Apply promo code (optional)
-7. "Place Order" → creates order → redirects to `/order-placed`
-8. Auto-redirect to `/my-orders` after 5 seconds
-
-## Product Categories
-- Earphone
-- Headphone
-- Watch
-- Smartphone
-- Laptop
-- Camera
-- Accessories
-
-## Key Components
-
-### Navbar (`components/Navbar.jsx`)
-- Logo with home navigation
-- Desktop nav: Home, Shop, About Us, Contact
-- Seller Dashboard button (conditionally shown)
-- User menu via Clerk UserButton with custom actions:
-  - Cart, My Orders (desktop)
-  - Home, Products, Cart, My Orders (mobile)
-
-### ProductCard (`components/ProductCard.jsx`)
-- Product image with hover scale effect
-- Wishlist button (heart icon)
-- Product name, description (truncated)
-- Star rating display
-- Price with "Buy now" button
-
-### OrderSummary (`components/OrderSummary.jsx`)
-- Address dropdown selector
-- "Add New Address" option
-- Promo code input
-- Item count, subtotal, shipping (free), tax (2%)
-- Total calculation
-- "Place Order" button
-
-### Seller Sidebar (`components/seller/Sidebar.jsx`)
-- Add Product, Product List, Orders navigation
-- Active state highlighting with orange accent
-
-## Database Schema
-
-### User Model (`models/user.js`)
+### Product
 ```javascript
 {
-  id: String,         // Clerk user ID
+  userId: String (seller ID),
   name: String,
-  email: String,      // Unique
-  ImageUrl: String,
-  password: String,
-  isAdmin: Boolean    // Default: false
+  description: String,
+  price: Number,
+  offerPrice: Number,
+  image: [String] (array of URLs or base64),
+  category: String,
+  date: Date
+}
+```
+
+### Order
+```javascript
+{
+  userId: String,
+  items: [{ product: ObjectId, quantity: Number }],
+  amount: Number,
+  address: { fullName, phoneNumber, pincode, area, city, state },
+  status: String (Order Placed/Shipped/Out for Delivery/Delivered/Cancelled),
+  paymentMethod: String,
+  isPaid: Boolean,
+  date: Date
+}
+```
+
+### Address
+```javascript
+{
+  userId: String,
+  fullName: String,
+  phoneNumber: String,
+  pincode: String,
+  area: String,
+  city: String,
+  state: String
 }
 ```
 
 ## Environment Variables
 
-| Variable | Purpose |
-|----------|---------|
-| `MONGO_URI` | MongoDB connection string |
-| `NEXT_PUBLIC_CURRENCY` | Currency symbol (e.g., "$") |
-| Clerk variables | Clerk API keys |
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `MONGODB_URI` | Yes | MongoDB connection string (e.g., `mongodb://localhost:27017`) |
+| `JWT_SECRET` | Yes | Secret key for JWT signing (change in production!) |
+| `NEXT_PUBLIC_CURRENCY` | No | Currency symbol (default: $) |
 
-## Current State (Development)
+## Getting Started
 
-The application currently uses **dummy data** from `assets/assets.js`:
-- `productsDummyData` - Sample product catalog
-- `userDummyData` - Sample user data
-- `orderDummyData` - Sample order data
-- `addressDummyData` - Sample addresses
+### Prerequisites
+1. Node.js 18+
+2. MongoDB Community Server (local installation)
 
-**Note**: API integration and database operations are not yet fully implemented. Functions like `handleSubmit`, `createOrder`, `onSubmitHandler` are placeholder stubs.
+### Setup Steps
+1. Install dependencies: `npm install`
+2. Start MongoDB service (Windows: `net start MongoDB` or MongoDB Compass)
+3. Create `.env` file with:
+   ```
+   MONGODB_URI=mongodb://localhost:27017
+   JWT_SECRET=your-secret-key-here
+   NEXT_PUBLIC_CURRENCY=$
+   ```
+4. Run development server: `npm run dev`
+5. Open http://localhost:3000
+
+### Creating a Seller Account
+1. Go to `/register`
+2. Fill in name, email, password
+3. Check "Register as a Seller"
+4. Click "Create account"
+5. You'll be redirected and can access `/seller` dashboard
+
+## Features
+
+### Customer Features
+- Browse products with categories
+- Product detail pages
+- Shopping cart (persisted when logged in)
+- Order placement
+- Order history
+- Address management
+
+### Seller Features
+- Add products with images
+- Product listing with delete
+- Order management with status updates
+- Dashboard with sidebar navigation
 
 ## File Naming Conventions
 
@@ -196,21 +228,13 @@ The application currently uses **dummy data** from `assets/assets.js`:
 - Layouts: `layout.jsx`
 - Components: PascalCase (e.g., `ProductCard.jsx`)
 - Utils/Config: camelCase (e.g., `authSeller.js`)
-- Assets: snake_case (e.g., `heart_icon.svg`)
-
-## Styling Guidelines
-
-- Tailwind CSS for all styling
-- Orange accent color: `orange-500`, `orange-600`
-- Gray text: `gray-500`, `gray-600`, `gray-700`, `gray-800`
-- Responsive breakpoints: `max-sm`, `md`, `lg`, `xl`
-- Font: Outfit (Google Font) with weights 300, 400, 500
+- API Routes: `route.js` in folder structure
+- Models: PascalCase (e.g., `Product.js`)
 
 ## Known Issues / TODOs
 
-1. Inngest config imports itself (`import { inngest } from "./client"` should reference same file)
-2. Typos in `inngest.js`: `lasr_name` should be `last_name`, `inage_url` should be `image_url`
-3. `syncUserDeletion` is registered twice in inngest route
-4. MongoDB database name has a space: `"quick cart "` (should be fixed)
-5. Form submissions (`handleSubmit`, `createOrder`, `onSubmitHandler`) are empty stubs
-6. Currently using all dummy data instead of real API calls
+1. Images stored as base64 - should use file uploads to `/public` for production
+2. No payment integration yet
+3. No email verification
+4. Cart not persisting for guest users
+5. Product search not implemented

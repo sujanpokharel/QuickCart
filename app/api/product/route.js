@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/config/db';
 import Product from '@/models/Product';
-import { auth } from '@clerk/nextjs/server';
+import { getCurrentUser } from '@/lib/auth';
 import authSeller from '@/lib/authSeller';
 
 // GET all products or products by seller
@@ -30,14 +30,14 @@ export async function GET(request) {
 // POST - Add new product (Seller only)
 export async function POST(request) {
     try {
-        const { userId } = await auth();
+        const user = await getCurrentUser();
 
-        if (!userId) {
+        if (!user) {
             return NextResponse.json({ success: false, message: 'Not authenticated' }, { status: 401 });
         }
 
         // Verify seller role
-        const isSeller = await authSeller(userId);
+        const isSeller = await authSeller();
         if (!isSeller) {
             return NextResponse.json({ success: false, message: 'Not authorized as seller' }, { status: 403 });
         }
@@ -52,7 +52,7 @@ export async function POST(request) {
         }
 
         const product = await Product.create({
-            userId,
+            userId: user.userId,
             name,
             description,
             price: Number(price),

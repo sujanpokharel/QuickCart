@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/config/db';
 import Product from '@/models/Product';
-import { auth } from '@clerk/nextjs/server';
+import { getCurrentUser } from '@/lib/auth';
 import authSeller from '@/lib/authSeller';
 
 // GET single product by ID
@@ -25,14 +25,14 @@ export async function GET(request, { params }) {
 // DELETE product by ID (Seller only - must own the product)
 export async function DELETE(request, { params }) {
     try {
-        const { userId } = await auth();
+        const user = await getCurrentUser();
 
-        if (!userId) {
+        if (!user) {
             return NextResponse.json({ success: false, message: 'Not authenticated' }, { status: 401 });
         }
 
         // Verify seller role
-        const isSeller = await authSeller(userId);
+        const isSeller = await authSeller();
         if (!isSeller) {
             return NextResponse.json({ success: false, message: 'Not authorized as seller' }, { status: 403 });
         }
@@ -47,7 +47,7 @@ export async function DELETE(request, { params }) {
         }
 
         // Check if the seller owns this product
-        if (product.userId !== userId) {
+        if (product.userId !== user.userId) {
             return NextResponse.json({ success: false, message: 'Not authorized to delete this product' }, { status: 403 });
         }
 
@@ -62,14 +62,14 @@ export async function DELETE(request, { params }) {
 // PUT - Update product (Seller only - must own the product)
 export async function PUT(request, { params }) {
     try {
-        const { userId } = await auth();
+        const user = await getCurrentUser();
 
-        if (!userId) {
+        if (!user) {
             return NextResponse.json({ success: false, message: 'Not authenticated' }, { status: 401 });
         }
 
         // Verify seller role
-        const isSeller = await authSeller(userId);
+        const isSeller = await authSeller();
         if (!isSeller) {
             return NextResponse.json({ success: false, message: 'Not authorized as seller' }, { status: 403 });
         }
@@ -84,7 +84,7 @@ export async function PUT(request, { params }) {
         }
 
         // Check if the seller owns this product
-        if (product.userId !== userId) {
+        if (product.userId !== user.userId) {
             return NextResponse.json({ success: false, message: 'Not authorized to update this product' }, { status: 403 });
         }
 

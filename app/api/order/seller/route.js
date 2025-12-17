@@ -2,20 +2,20 @@ import { NextResponse } from 'next/server';
 import connectDB from '@/config/db';
 import Order from '@/models/Order';
 import Product from '@/models/Product';
-import { auth } from '@clerk/nextjs/server';
+import { getCurrentUser } from '@/lib/auth';
 import authSeller from '@/lib/authSeller';
 
 // GET orders for seller (orders containing their products)
 export async function GET(request) {
     try {
-        const { userId } = await auth();
+        const user = await getCurrentUser();
 
-        if (!userId) {
+        if (!user) {
             return NextResponse.json({ success: false, message: 'Not authenticated' }, { status: 401 });
         }
 
         // Verify seller role
-        const isSeller = await authSeller(userId);
+        const isSeller = await authSeller();
         if (!isSeller) {
             return NextResponse.json({ success: false, message: 'Not authorized as seller' }, { status: 403 });
         }
@@ -23,7 +23,7 @@ export async function GET(request) {
         await connectDB();
 
         // Get all products by this seller
-        const sellerProducts = await Product.find({ userId });
+        const sellerProducts = await Product.find({ userId: user.userId });
         const sellerProductIds = sellerProducts.map(p => p._id);
 
         // Find all orders that contain at least one product from this seller
@@ -65,14 +65,14 @@ export async function GET(request) {
 // PUT - Update order status (Seller only)
 export async function PUT(request) {
     try {
-        const { userId } = await auth();
+        const user = await getCurrentUser();
 
-        if (!userId) {
+        if (!user) {
             return NextResponse.json({ success: false, message: 'Not authenticated' }, { status: 401 });
         }
 
         // Verify seller role
-        const isSeller = await authSeller(userId);
+        const isSeller = await authSeller();
         if (!isSeller) {
             return NextResponse.json({ success: false, message: 'Not authorized as seller' }, { status: 403 });
         }

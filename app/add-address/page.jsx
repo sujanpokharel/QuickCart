@@ -4,9 +4,12 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Image from "next/image";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 
 const AddAddress = () => {
-
+    const router = useRouter();
+    const [loading, setLoading] = useState(false);
     const [address, setAddress] = useState({
         fullName: '',
         phoneNumber: '',
@@ -19,6 +22,37 @@ const AddAddress = () => {
     const onSubmitHandler = async (e) => {
         e.preventDefault();
 
+        // Validate all fields
+        if (!address.fullName || !address.phoneNumber || !address.pincode || !address.area || !address.city || !address.state) {
+            toast.error('Please fill in all fields');
+            return;
+        }
+
+        setLoading(true);
+
+        try {
+            const response = await fetch('/api/address', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(address)
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                toast.success('Address added successfully!');
+                router.push('/cart');
+            } else {
+                toast.error(data.message || 'Failed to add address');
+            }
+        } catch (error) {
+            console.error('Error adding address:', error);
+            toast.error('Error adding address. Please try again.');
+        } finally {
+            setLoading(false);
+        }
     }
 
     return (
@@ -34,13 +68,15 @@ const AddAddress = () => {
                             className="px-2 py-2.5 focus:border-orange-500 transition border border-gray-500/30 rounded outline-none w-full text-gray-500"
                             type="text"
                             placeholder="Full name"
+                            required
                             onChange={(e) => setAddress({ ...address, fullName: e.target.value })}
                             value={address.fullName}
                         />
                         <input
                             className="px-2 py-2.5 focus:border-orange-500 transition border border-gray-500/30 rounded outline-none w-full text-gray-500"
-                            type="text"
+                            type="tel"
                             placeholder="Phone number"
+                            required
                             onChange={(e) => setAddress({ ...address, phoneNumber: e.target.value })}
                             value={address.phoneNumber}
                         />
@@ -48,14 +84,15 @@ const AddAddress = () => {
                             className="px-2 py-2.5 focus:border-orange-500 transition border border-gray-500/30 rounded outline-none w-full text-gray-500"
                             type="text"
                             placeholder="Pin code"
+                            required
                             onChange={(e) => setAddress({ ...address, pincode: e.target.value })}
                             value={address.pincode}
                         />
                         <textarea
                             className="px-2 py-2.5 focus:border-orange-500 transition border border-gray-500/30 rounded outline-none w-full text-gray-500 resize-none"
-                            type="text"
                             rows={4}
                             placeholder="Address (Area and Street)"
+                            required
                             onChange={(e) => setAddress({ ...address, area: e.target.value })}
                             value={address.area}
                         ></textarea>
@@ -64,6 +101,7 @@ const AddAddress = () => {
                                 className="px-2 py-2.5 focus:border-orange-500 transition border border-gray-500/30 rounded outline-none w-full text-gray-500"
                                 type="text"
                                 placeholder="City/District/Town"
+                                required
                                 onChange={(e) => setAddress({ ...address, city: e.target.value })}
                                 value={address.city}
                             />
@@ -71,13 +109,18 @@ const AddAddress = () => {
                                 className="px-2 py-2.5 focus:border-orange-500 transition border border-gray-500/30 rounded outline-none w-full text-gray-500"
                                 type="text"
                                 placeholder="State"
+                                required
                                 onChange={(e) => setAddress({ ...address, state: e.target.value })}
                                 value={address.state}
                             />
                         </div>
                     </div>
-                    <button type="submit" className="max-w-sm w-full mt-6 bg-orange-600 text-white py-3 hover:bg-orange-700 uppercase">
-                        Save address
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="max-w-sm w-full mt-6 bg-orange-600 text-white py-3 hover:bg-orange-700 uppercase disabled:bg-orange-400 disabled:cursor-not-allowed transition-colors"
+                    >
+                        {loading ? 'Saving...' : 'Save address'}
                     </button>
                 </form>
                 <Image

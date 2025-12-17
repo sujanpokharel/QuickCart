@@ -1,20 +1,20 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/config/db';
 import Address from '@/models/Address';
-import { auth } from '@clerk/nextjs/server';
+import { getCurrentUser } from '@/lib/auth';
 
 // GET all addresses for the authenticated user
 export async function GET(request) {
     try {
-        const { userId } = await auth();
+        const user = await getCurrentUser();
 
-        if (!userId) {
+        if (!user) {
             return NextResponse.json({ success: false, message: 'Not authenticated' }, { status: 401 });
         }
 
         await connectDB();
 
-        const addresses = await Address.find({ userId });
+        const addresses = await Address.find({ userId: user.userId });
 
         return NextResponse.json({ success: true, addresses });
     } catch (error) {
@@ -25,9 +25,9 @@ export async function GET(request) {
 // POST - Add new address
 export async function POST(request) {
     try {
-        const { userId } = await auth();
+        const user = await getCurrentUser();
 
-        if (!userId) {
+        if (!user) {
             return NextResponse.json({ success: false, message: 'Not authenticated' }, { status: 401 });
         }
 
@@ -41,7 +41,7 @@ export async function POST(request) {
         }
 
         const address = await Address.create({
-            userId,
+            userId: user.userId,
             fullName,
             phoneNumber,
             pincode,
@@ -59,9 +59,9 @@ export async function POST(request) {
 // DELETE - Remove address
 export async function DELETE(request) {
     try {
-        const { userId } = await auth();
+        const user = await getCurrentUser();
 
-        if (!userId) {
+        if (!user) {
             return NextResponse.json({ success: false, message: 'Not authenticated' }, { status: 401 });
         }
 
@@ -80,7 +80,7 @@ export async function DELETE(request) {
             return NextResponse.json({ success: false, message: 'Address not found' }, { status: 404 });
         }
 
-        if (address.userId !== userId) {
+        if (address.userId !== user.userId) {
             return NextResponse.json({ success: false, message: 'Not authorized' }, { status: 403 });
         }
 

@@ -1,29 +1,26 @@
 import { Outfit } from "next/font/google";
 import "./globals.css";
+import ChatWidget from "@/components/ChatWidget";
 import { AppContextProvider } from "@/context/AppContext";
 import { Toaster } from "react-hot-toast";
-import { ClerkProvider } from "@clerk/nextjs";
-import clerk from "clerk";  
-
 
 const outfit = Outfit({ subsets: ['latin'], weight: ["300", "400", "500"] })
 
 export const metadata = {
-  title: "QuickCart - GreatStack",
-  description: "E-Commerce with Next.js ",
+  title: "QuickCart - E-Commerce",
+  description: "E-Commerce with Next.js",
 };
 
 export default function RootLayout({ children }) {
   return (
-      <ClerkProvider>
-      <html lang="en">
-        <body className={`${outfit.className} antialiased text-gray-700`} >
-          <Toaster />
-          <AppContextProvider>
-            {children}
-          </AppContextProvider>
-        </body>
-      </html>
-      </ClerkProvider>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${outfit.className} antialiased text-gray-700`} suppressHydrationWarning>
+        <Toaster />
+        <AppContextProvider>
+          <ChatWidget />
+          {children}
+        </AppContextProvider>
+      </body>
+    </html>
   );
 }

@@ -2,20 +2,20 @@ import { NextResponse } from 'next/server';
 import connectDB from '@/config/db';
 import Order from '@/models/Order';
 import Product from '@/models/Product';
-import { auth } from '@clerk/nextjs/server';
+import { getCurrentUser } from '@/lib/auth';
 
 // GET orders for the authenticated user
 export async function GET(request) {
     try {
-        const { userId } = await auth();
+        const user = await getCurrentUser();
 
-        if (!userId) {
+        if (!user) {
             return NextResponse.json({ success: false, message: 'Not authenticated' }, { status: 401 });
         }
 
         await connectDB();
 
-        const orders = await Order.find({ userId })
+        const orders = await Order.find({ userId: user.userId })
             .populate('items.product')
             .sort({ date: -1 });
 
@@ -28,9 +28,9 @@ export async function GET(request) {
 // POST - Create new order
 export async function POST(request) {
     try {
-        const { userId } = await auth();
+        const user = await getCurrentUser();
 
-        if (!userId) {
+        if (!user) {
             return NextResponse.json({ success: false, message: 'Not authenticated' }, { status: 401 });
         }
 
@@ -60,7 +60,7 @@ export async function POST(request) {
         amount = amount + Math.floor(amount * 0.02);
 
         const order = await Order.create({
-            userId,
+            userId: user.userId,
             items,
             amount,
             address
