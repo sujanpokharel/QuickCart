@@ -227,3 +227,30 @@ QuickCart/
 2. Payment integration (Stripe/PayPal) is missing.
 3. Product search is visual only (not functional).
 4. No automated email notifications for orders.
+
+## Real-time Signaling & Communication
+
+### Real-time Signaling System
+- **Signaling API**: `/api/signal`
+  - Handles `GET` (poll for new signals) and `POST` (send a signal).
+  - Used for WebRTC coordination (call invites, status updates).
+- **Signal Model**: `models/Signal.js`
+  - Stores signals with an `expireAfterSeconds` TTL of 60 seconds.
+  - Fields: `from`, `to`, `type`, `data`, `read`.
+
+### Video & Voice Calls
+- **Technology**: Built using **PeerJS** for peer-to-peer WebRTC connections.
+- **Components**:
+  - `ChatWidget.jsx`: User-side chat and call interface (Messenger style).
+  - `AdminMessages.jsx`: Admin-side conversation management and call handling.
+  - `VideoCallInterface.jsx`: Premium, glassmorphic UI for active calls with full media controls.
+- **Standard Flow**:
+  1. User/Admin initiates call -> `CALL_INVITE` signal sent via `/api/signal`.
+  2. Receiver polls signal -> Shows incoming call UI.
+  3. Receiver accepts -> Connects via PeerJS and shares media streams.
+  4. Call termination -> `CALL_ENDED` signal sent; tracks stopped.
+
+### Admin Dashboard (Updated)
+- **Inbox**: Advanced messaging system with real-time signal polling.
+- **Live Support**: Admin can initiate voice or video calls directly with customers.
+- **Premium UI**: Uses glassmorphism, smooth animations, and a modern layout.
